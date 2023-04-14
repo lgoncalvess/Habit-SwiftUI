@@ -2,7 +2,7 @@
 //  HabitApp.swift
 //  Habit
 //
-//  Created by Leonardo Gonçalves on 27/01/23.
+//  Created by Tiago Aguiar on 08/04/21.
 //
 
 import SwiftUI
@@ -11,7 +11,7 @@ import SwiftUI
 struct HabitApp: App {
     var body: some Scene {
         WindowGroup {
-            SplashView(viewModel: SplasViewModel(interactor: SplashViewInteractor()))
+          SplashView(viewModel: SplashViewModel(interactor: SplashInteractor()))
         }
     }
 }

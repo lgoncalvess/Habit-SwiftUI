@@ -2,12 +2,11 @@
 //  HabitValueRequest.swift
 //  Habit
 //
-//  Created by Leonardo Gonçalves on 11/02/23.
+//  Created by Tiago Aguiar on 24/06/21.
 //
 
 import Foundation
 
-
 struct HabitValueRequest: Encodable {
-    let value: String
+  let value: String
 }

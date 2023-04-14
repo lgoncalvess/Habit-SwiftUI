@@ -2,18 +2,22 @@
 //  HabitInteractor.swift
 //  Habit
 //
-//  Created by Leonardo Gonçalves on 10/02/23.
+//  Created by Tiago Aguiar on 18/06/21.
 //
 
 import Foundation
 import Combine
 
 class HabitInteractor {
-    private let remote: HabitRemoteDataSource = .shared
+  
+  private let remote: HabitRemoteDataSource = .shared
+  
 }
 
 extension HabitInteractor {
-    func fetchHabits() -> Future<[habitResponse], AppError> {
-        return remote.fetchHabits()
-    }
+  
+  func fetchHabits() -> Future<[HabitResponse], AppError> {
+    return remote.fetchHabits()
+  }
+  
 }

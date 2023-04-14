@@ -2,13 +2,12 @@
 //  SignInRequest.swift
 //  Habit
 //
-//  Created by Leonardo Gonçalves on 04/02/23.
+//  Created by Tiago Aguiar on 19/05/21.
 //
 
 import Foundation
 
 struct SignInRequest {
-    let email: String
-    let password: String
-    
+  let email: String
+  let password: String
 }

@@ -1,25 +1,28 @@
 //
-//  SignInInteractor.swift
+//  SignIninteractor.swift
 //  Habit
 //
-//  Created by Leonardo Gonçalves on 05/02/23.
+//  Created by Tiago Aguiar on 25/05/21.
 //
 
 import Foundation
 import Combine
 
 class SignInInteractor {
-    private let remote: SignInRemoteDataSource = .shared
-    private let local: LocalDataSource = .shared
+  
+  private let remote: SignInRemoteDataSource = .shared
+  private let local: LocalDataSource = .shared
+  
 }
 
 extension SignInInteractor {
-    
-    func login(request: SignInRequest) -> Future<SignInResponse, AppError> {
-        return remote.login(request: request)
-    }
-    
-    func inserAuth(userAuth: UserAuth) {
-        local.insertUserAuth(userAuth: userAuth)
-    }
+  
+  func login(loginRequest request: SignInRequest) -> Future<SignInResponse, AppError> {
+    return remote.login(request: request)
+  }
+  
+  func insertAuth(userAuth: UserAuth) {
+    local.insertUserAuth(userAuth: userAuth)
+  }
+  
 }

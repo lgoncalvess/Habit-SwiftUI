@@ -2,96 +2,116 @@
 //  SignUpViewModel.swift
 //  Habit
 //
-//  Created by Leonardo Gonçalves on 30/01/23.
+//  Created by Tiago Aguiar on 07/05/21.
 //
 
 import SwiftUI
 import Combine
 
 class SignUpViewModel: ObservableObject {
+  
+  @Published var fullName = ""
+  @Published var email = ""
+  @Published var password = ""
+  @Published var document = ""
+  @Published var phone = ""
+  @Published var birthday = ""
+  @Published var gender = Gender.male
+  
+  var publisher: PassthroughSubject<Bool, Never>!
+  
+  private var cancellableSignUp: AnyCancellable?
+  private var cancellableSignIn: AnyCancellable?
+  
+  @Published var uiState: SignUpUIState = .none
+  
+  private let interactor: SignUpInteractor
+  
+  init(interactor: SignUpInteractor) {
+    self.interactor = interactor
+  }
+  
+  deinit {
+    cancellableSignUp?.cancel()
+    cancellableSignIn?.cancel()
+  }
+  
+  func signUp() {
+    self.uiState = .loading
     
-    @Published var fullName = ""
-    @Published var email = ""
-    @Published var password = ""
-    @Published var document = ""
-    @Published var phone = ""
-    @Published var birthday = ""
-    @Published var gender = Gender.male
+    // Pegar a String -> dd/MM/yyyy -> Date
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "dd/MM/yyyy"
     
-    var publisher: PassthroughSubject<Bool, Never>!
-    private var cancellableSignIn: AnyCancellable?
-    private var cancellableSignUp: AnyCancellable?
-
+    let dateFormatted = formatter.date(from: birthday)
     
-    @Published var uiState: SignUpUIState = .none
-    
-    private let interactor: SignUpInteractor
-    
-    init(interactor: SignUpInteractor) {
-        self.interactor = interactor
+    // Validar a Data
+    guard let dateFormatted = dateFormatted else {
+      self.uiState = .error("Data inválida \(birthday)")
+      return
     }
     
-    deinit {
-        cancellableSignIn?.cancel()
-        cancellableSignUp?.cancel()
-    }
+    // Date -> yyyy-MM-dd -> String
+    formatter.dateFormat = "yyyy-MM-dd"
+    let birthday = formatter.string(from: dateFormatted)
     
-    func signUp() {
-        self.uiState = .loading
-        
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "dd/MM/yyyy"
-        let dateFormatted = formatter.date(from: birthday)
-        
-        guard let dateFormatted = dateFormatted else {
-            self.uiState = .error("data inválida \(birthday)")
-            return
+    // Main Thread
+    let signUpRequest = SignUpRequest(fullName: fullName,
+                                      email: email,
+                                      password: password,
+                                      document: document,
+                                      phone: phone,
+                                      birthday: birthday,
+                                      gender: gender.index)
+    
+    cancellableSignUp = interactor.postUser(signUpRequest: signUpRequest)
+      .receive(on: DispatchQueue.main)
+      .sink { completion in
+        // error | finished
+        switch(completion) {
+          case .failure(let appError):
+            self.uiState = .error(appError.message)
+            break
+          case .finished:
+            break
         }
         
-        formatter.dateFormat = "yyyy-MM-dd"
-        
-        let birthday = formatter.string(from: dateFormatted)
-        
-        let SignUpRequest = SignUpRequest(fullName: fullName, email: email, password: password, document: document, phone: phone, birthday: birthday, gender: gender.index)
-        
-        cancellableSignUp = interactor.postUser(request: SignUpRequest)
+      } receiveValue: { created in
+        if (created) {
+          // se tiver criado -> Login
+          
+          self.cancellableSignIn = self.interactor.login(signInRequest: SignInRequest(email: self.email, password: self.password))
             .receive(on: DispatchQueue.main)
             .sink { completion in
-                switch completion {
+              switch(completion) {
                 case .failure(let appError):
-                    self.uiState = .error(appError.message)
-                    break
+                  self.uiState = .error(appError.message)
+                  break
                 case .finished:
-                    break
-                }
-            } receiveValue: { created in
-                if created {
-                    self.cancellableSignIn = self.interactor.login(request: SignInRequest(email: self.email, password: self.password))
-                        .receive(on: DispatchQueue.main)
-                        .sink { completion in
-                            switch completion {
-                            case .failure(let appError):
-                                self.uiState = .error(appError.message)
-                                break
-                            case .finished:
-                                break
-                            }
-                        } receiveValue: { success in
-                            print(success)
-                            
-                            self.interactor.inserAuth(userAuth: UserAuth(idToken: success.accessToken, refreshToken: success.refreshToken, expires: Date().timeIntervalSince1970 + Double(success.expires), tokenType: success.tokenType))
-                            
-                            self.publisher.send(created)
-                            self.uiState = .success
-                        }
-                }
+                  break
+              }
+            } receiveValue: { success in
+              print(created)
+              
+              let auth = UserAuth(idToken: success.accessToken,
+                                  refreshToken: success.refreshToken,
+                                  expires: Date().timeIntervalSince1970 + Double(success.expires),
+                                  tokenType: success.tokenType)
+              
+              self.interactor.insertAuth(userAuth: auth)
+              
+              self.publisher.send(created)
+              self.uiState = .success
             }
-    }
+        }
+      }
+  }
+  
 }
 
 extension SignUpViewModel {
-    func homeView() -> some View {
-        return SignUpViewRouter.makeHomeView()
-    }
+  func homeView() -> some View {
+    return SignUpViewRouter.makeHomeView()
+  }
 }
